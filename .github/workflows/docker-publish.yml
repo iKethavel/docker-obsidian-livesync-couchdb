@@ -135,7 +135,7 @@ jobs:
           labels: |
             org.opencontainers.image.title=CouchDB for Obsidian LiveSync
             org.opencontainers.image.description=A Docker container that configures CouchDB specifically for use with Obsidian LiveSync
-            org.opencontainers.image.url=https://hub.docker.com/r/iKethavel/docker-obsidian-livesync-couchdb
+            org.opencontainers.image.url=https://hub.docker.com/r/rostyslavmelnychuk/docker-obsidian-livesync-couchdb
             org.opencontainers.image.source=https://github.com/iKethavel/docker-obsidian-livesync-couchdb
             org.opencontainers.image.documentation=https://github.com/iKethavel/docker-obsidian-livesync-couchdb#readme
             org.opencontainers.image.licenses=MIT

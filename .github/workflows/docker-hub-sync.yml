@@ -31,6 +31,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-          repository: iKethavel/docker-obsidian-livesync-couchdb
+          repository: rostyslavmelnychuk/docker-obsidian-livesync-couchdb
           short-description: ${{ steps.description.outputs.short_description }}
           readme-filepath: ./README.md
