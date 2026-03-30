@@ -4,7 +4,7 @@ This repository provides a Docker container for configuring CouchDB specifically
 
 The container is built and published automatically via GitHub Actions.
 
-[Docker Hub Page](https://hub.docker.com/r/iKethavel/docker-obsidian-livesync-couchdb)
+[Docker Hub Page](https://hub.docker.com/r/rostyslavmelnychuk/docker-obsidian-livesync-couchdb)
 
 ## Features
 - **Automated CouchDB Configuration**: Extracts necessary settings for Obsidian LiveSync from the bash script created by the plugin maintainer.
@@ -58,7 +58,7 @@ When you create a GitHub release (e.g., `v1.2.3`), the following tags are automa
 - `1`: Major version only
 
 ### Docker Hub Integration
-This repository is integrated with Docker Hub at [`iKethavel/docker-obsidian-livesync-couchdb`](https://hub.docker.com/r/iKethavel/docker-obsidian-livesync-couchdb):
+This repository is integrated with Docker Hub at [`rostyslavmelnychuk/docker-obsidian-livesync-couchdb`](https://hub.docker.com/r/rostyslavmelnychuk/docker-obsidian-livesync-couchdb):
 
 - **Automated Publishing**: GitHub Actions automatically pushes images to Docker Hub on releases
 - **Semantic Versioning**: Multiple tags are created for each release for flexible version pinning
@@ -71,7 +71,7 @@ Architecture-specific tags are automatically handled by Docker's manifest lists.
 ### Pulling the Docker Image
 To use the pre-built image, pull it from the container registry:
 ```bash
-docker pull docker.io/iKethavel/docker-obsidian-livesync-couchdb:latest
+docker pull docker.io/rostyslavmelnychuk/docker-obsidian-livesync-couchdb:latest
 ```
 
 **Multi-Architecture Support**: This image supports both AMD64 (x86_64) and ARM64 architectures, including Apple Silicon Macs, ARM-based servers, and other ARM64 devices. Docker will automatically pull the correct architecture for your platform.
@@ -105,7 +105,7 @@ docker run -d \
   -e COUCHDB_PASSWORD=password \
   -e COUCHDB_DATABASE=obsidian \
   -p 5984:5984 \
-  docker.io/iKethavel/docker-obsidian-livesync-couchdb:master
+  docker.io/rostyslavmelnychuk/docker-obsidian-livesync-couchdb:master
 ```
 
 Or via docker-compose
@@ -114,7 +114,7 @@ version: "3.8"
 
 services:
   couchdb-obsidian-livesync:
-    image: docker.io/iKethavel/docker-obsidian-livesync-couchdb:master
+    image: docker.io/rostyslavmelnychuk/docker-obsidian-livesync-couchdb:master
     container_name: couchdb-obsidian-livesync
     restart: always
     environment:
