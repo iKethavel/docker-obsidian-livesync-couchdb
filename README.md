@@ -78,6 +78,24 @@ docker pull docker.io/oleduc/docker-obsidian-livesync-couchdb:latest
 
 ### Running the Container
 
+**Mirroring / Headless Sync (Optional)**
+This container includes support for the Self-hosted LiveSync Headless CLI, allowing it to sync the database directly with a local filesystem folder (e.g., a vault folder on a NAS).
+
+To enable this feature, provide the `HEADLESS_SYNC_DBS` environment variable and map your vault to `/opt/headless/data`:
+
+```yaml
+    environment:
+      SERVER_URL: "http://your_server_ip_or_domain:5984"
+      HEADLESS_SYNC_DBS: "personal,larp" # optional: specify single db name or comma-separated list
+      SYNC_PASSPHRASE: "your_encryption_passphrase"
+      SYNC_INTERVAL: "30" # optional: defaults to 30 seconds
+    volumes:
+      # If specifying one database (e.g. "larp"), map your direct vault location:
+      # - /path/to/your/vault:/opt/headless/data
+      # If specifying multiple DBs (e.g. "personal,larp"), map the parent directory:
+      - /path/to/multiple/vaults:/opt/headless/data
+```
+
 Run the container with CouchDB configured for Obsidian LiveSync:
 
 ```

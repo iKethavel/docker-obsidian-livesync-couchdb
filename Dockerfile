@@ -10,12 +10,17 @@ LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.authors="oleduc"
 LABEL org.opencontainers.image.vendor="oleduc"
 
-# Install dependencies
+# Install basic dependencies
 RUN apt-get update && apt-get install -y \
     curl \
     ca-certificates \
     unzip \
+    git \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js 22.x (required by Vite)
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get install -y nodejs
 
 # Install Deno
 RUN curl -fsSL https://deno.land/install.sh | sh
@@ -39,6 +44,19 @@ RUN curl -fsSL https://raw.githubusercontent.com/vrtmrz/obsidian-livesync/main/u
 # Update the couchDB config from the couchdb-init script provided by the plugin maintainer
 RUN deno -A /scripts/couchdb-setup.ts
 
+# Install the LiveSync Headless CLI
+WORKDIR /opt/obsidian-livesync
+RUN git clone --depth 1 --recurse-submodules --shallow-submodules https://github.com/vrtmrz/obsidian-livesync.git . && \
+    npm install && \
+    cd src/apps/cli && \
+    npm run build
+
+# Copy the custom entrypoint wrapper
+COPY docker-entrypoint-wrapper.sh /docker-entrypoint-wrapper.sh
+RUN chmod +x /docker-entrypoint-wrapper.sh
+
 ENV SERVER_DOMAIN=localhost
 ENV COUCHDB_USER=default
 ENV COUCHDB_DATABASE=default
+
+ENTRYPOINT ["/docker-entrypoint-wrapper.sh"]
