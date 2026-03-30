@@ -3,12 +3,12 @@ FROM docker.io/couchdb:3.5.0
 # Add metadata labels for Docker Hub integration
 LABEL org.opencontainers.image.title="CouchDB for Obsidian LiveSync"
 LABEL org.opencontainers.image.description="A Docker container that configures CouchDB specifically for use with Obsidian LiveSync, automating the setup process by parsing the bash script provided by obsidian-livesync's maintainer"
-LABEL org.opencontainers.image.url="https://hub.docker.com/r/oleduc/docker-obsidian-livesync-couchdb"
-LABEL org.opencontainers.image.source="https://github.com/oleduc/docker-obsidian-livesync-couchdb"
-LABEL org.opencontainers.image.documentation="https://github.com/oleduc/docker-obsidian-livesync-couchdb#readme"
+LABEL org.opencontainers.image.url="https://hub.docker.com/r/iKethavel/docker-obsidian-livesync-couchdb"
+LABEL org.opencontainers.image.source="https://github.com/iKethavel/docker-obsidian-livesync-couchdb"
+LABEL org.opencontainers.image.documentation="https://github.com/iKethavel/docker-obsidian-livesync-couchdb#readme"
 LABEL org.opencontainers.image.licenses="MIT"
-LABEL org.opencontainers.image.authors="oleduc"
-LABEL org.opencontainers.image.vendor="oleduc"
+LABEL org.opencontainers.image.authors="iKethavel"
+LABEL org.opencontainers.image.vendor="iKethavel"
 
 # Install basic dependencies
 RUN apt-get update && apt-get install -y \

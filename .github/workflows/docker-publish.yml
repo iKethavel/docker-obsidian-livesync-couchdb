@@ -116,7 +116,7 @@ jobs:
         uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
       # Extract metadata (tags, labels) for Docker
@@ -134,9 +134,9 @@ jobs:
           labels: |
             org.opencontainers.image.title=CouchDB for Obsidian LiveSync
             org.opencontainers.image.description=A Docker container that configures CouchDB specifically for use with Obsidian LiveSync
-            org.opencontainers.image.url=https://hub.docker.com/r/oleduc/docker-obsidian-livesync-couchdb
-            org.opencontainers.image.source=https://github.com/oleduc/docker-obsidian-livesync-couchdb
-            org.opencontainers.image.documentation=https://github.com/oleduc/docker-obsidian-livesync-couchdb#readme
+            org.opencontainers.image.url=https://hub.docker.com/r/iKethavel/docker-obsidian-livesync-couchdb
+            org.opencontainers.image.source=https://github.com/iKethavel/docker-obsidian-livesync-couchdb
+            org.opencontainers.image.documentation=https://github.com/iKethavel/docker-obsidian-livesync-couchdb#readme
             org.opencontainers.image.licenses=MIT
 
       # Build and push Docker image for releases (will use cache from build job)
