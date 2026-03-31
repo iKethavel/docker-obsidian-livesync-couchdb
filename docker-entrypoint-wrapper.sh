@@ -51,11 +51,9 @@ if [ -n "$HEADLESS_SYNC_DBS" ]; then
     "couchDB_USER": "${COUCHDB_USER}",
     "couchDB_PASSWORD": "${COUCHDB_PASSWORD}",
     "couchDB_DBNAME": "${DB}",
-    "liveSync": true,
-    "syncOnSave": true,
-    "syncOnStart": true,
     "encrypt": true,
     "passphrase": "${SYNC_PASSPHRASE}",
+    "usePathObfuscation": false,
     "usePluginSync": false,
     "isConfigured": true
 }
@@ -66,7 +64,7 @@ EOF
       (
         cd /opt/obsidian-livesync/src/apps/cli
         while true; do
-          node dist/index.cjs "$VAULT_PATH" --settings "$VAULT_PATH/.livesync/settings.json" sync || echo "Sync for '$DB' encountered an error, will retry..."
+          node dist/index.cjs "$VAULT_PATH" --settings "$VAULT_PATH/.livesync/settings.json" mirror || echo "Mirror for '$DB' encountered an error, will retry..."
           sleep "$SYNC_INTERVAL"
         done
       ) &
