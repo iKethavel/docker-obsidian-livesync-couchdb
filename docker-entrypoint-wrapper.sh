@@ -61,14 +61,59 @@ if [ -n "$HEADLESS_SYNC_DBS" ]; then
 }
 EOF
 
+      # Git initialization if GIT_REMOTE_URL is provided
+      if [ -n "$GIT_REMOTE_URL" ]; then
+        echo "Initializing Git for vault at '$VAULT_PATH'..."
+        GIT_BRANCH="${GIT_BRANCH:-main}"
+        GIT_USER_NAME="${GIT_USER_NAME:-Obsidian LiveSync Bot}"
+        GIT_USER_EMAIL="${GIT_USER_EMAIL:-obsidian-livesync@bot.local}"
+
+        # Ensure directory is safe for Git (handles permission issues in Docker volumes)
+        git config --global --add safe.directory "$VAULT_PATH"
+
+        cd "$VAULT_PATH"
+        if [ ! -d ".git" ]; then
+          git init
+          git remote add origin "$GIT_REMOTE_URL"
+          # Ensure .livesync is ignored
+          if ! grep -q ".livesync" .gitignore 2>/dev/null; then
+            echo ".livesync/" >> .gitignore
+          fi
+          # Fetch and align with remote if it exists
+          git fetch origin "$GIT_BRANCH" 2>/dev/null || true
+          if git ls-remote --exit-code origin "$GIT_BRANCH" >/dev/null 2>&1; then
+            git checkout "$GIT_BRANCH" || git checkout -b "$GIT_BRANCH"
+            git reset --mixed "origin/$GIT_BRANCH"
+          else
+            git checkout -b "$GIT_BRANCH"
+          fi
+        fi
+        git config user.name "$GIT_USER_NAME"
+        git config user.email "$GIT_USER_EMAIL"
+      fi
+
       # Start infinite sync loop for this database
       (
-        cd /opt/obsidian-livesync/src/apps/cli
         while true; do
           # Step 1: pull from remote CouchDB into local PouchDB cache
+          cd /opt/obsidian-livesync/src/apps/cli
           node dist/index.cjs "$VAULT_PATH" --settings "$VAULT_PATH/.livesync/settings.json" sync || echo "Sync for '$DB' encountered an error, will retry..."
+          
           # Step 2: write local PouchDB cache to filesystem as actual files
           node dist/index.cjs "$VAULT_PATH" --settings "$VAULT_PATH/.livesync/settings.json" mirror || echo "Mirror for '$DB' encountered an error, will retry..."
+          
+          # Step 3: Git sync if GIT_REMOTE_URL is provided
+          if [ -n "$GIT_REMOTE_URL" ]; then
+            cd "$VAULT_PATH"
+            git add .
+            if ! git diff --staged --quiet; then
+              echo "[Git] Changes detected for '$DB', committing..."
+              git commit -m "Obsidian LiveSync Mirror Update: $(date)"
+              echo "[Git] Pushing changes for '$DB' to origin/$GIT_BRANCH..."
+              git push origin "$GIT_BRANCH" || echo "[Git] Push failed for '$DB', will retry next cycle..."
+            fi
+          fi
+
           sleep "$SYNC_INTERVAL"
         done
       ) &
