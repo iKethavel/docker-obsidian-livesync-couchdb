@@ -42,23 +42,21 @@ if [ -n "$HEADLESS_SYNC_DBS" ]; then
       echo "Configuring headless sync loop for database '$DB' mapping to '$VAULT_PATH'..."
       mkdir -p "$VAULT_PATH/.livesync/db"
       
-      # Initialize settings.json if it doesn't exist
-      if [ ! -f "$VAULT_PATH/.livesync/settings.json" ]; then
-        echo "Initializing settings.json for '$DB'..."
-        cat <<EOF > "$VAULT_PATH/.livesync/settings.json"
+      # Always write settings.json fresh from current env vars
+      echo "Writing settings.json for '$DB'..."
+      cat <<EOF > "$VAULT_PATH/.livesync/settings.json"
 {
     "couchDB_URI": "${SERVER_URL}",
     "couchDB_USER": "${COUCHDB_USER}",
     "couchDB_PASSWORD": "${COUCHDB_PASSWORD}",
     "couchDB_DBNAME": "${DB}",
-    "encrypt": true,
+    "encrypt": ${SYNC_PASSPHRASE:+true}${SYNC_PASSPHRASE:-false},
     "passphrase": "${SYNC_PASSPHRASE}",
     "usePathObfuscation": false,
     "usePluginSync": false,
     "isConfigured": true
 }
 EOF
-      fi
 
       # Start infinite sync loop for this database
       (
