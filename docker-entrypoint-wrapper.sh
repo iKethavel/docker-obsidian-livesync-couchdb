@@ -40,7 +40,7 @@ if [ -n "$HEADLESS_SYNC_DBS" ]; then
       fi
 
       echo "Configuring headless sync loop for database '$DB' mapping to '$VAULT_PATH'..."
-      mkdir -p "$VAULT_PATH/.livesync"
+      mkdir -p "$VAULT_PATH/.livesync/db"
       
       # Initialize settings.json if it doesn't exist
       if [ ! -f "$VAULT_PATH/.livesync/settings.json" ]; then
@@ -64,6 +64,9 @@ EOF
       (
         cd /opt/obsidian-livesync/src/apps/cli
         while true; do
+          # Step 1: pull from remote CouchDB into local PouchDB cache
+          node dist/index.cjs "$VAULT_PATH" --settings "$VAULT_PATH/.livesync/settings.json" sync || echo "Sync for '$DB' encountered an error, will retry..."
+          # Step 2: write local PouchDB cache to filesystem as actual files
           node dist/index.cjs "$VAULT_PATH" --settings "$VAULT_PATH/.livesync/settings.json" mirror || echo "Mirror for '$DB' encountered an error, will retry..."
           sleep "$SYNC_INTERVAL"
         done

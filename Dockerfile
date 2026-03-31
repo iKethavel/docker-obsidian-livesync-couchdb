@@ -47,6 +47,7 @@ RUN deno -A /scripts/couchdb-setup.ts
 # Install the LiveSync Headless CLI
 WORKDIR /opt/obsidian-livesync
 RUN git clone --depth 1 --recurse-submodules --shallow-submodules https://github.com/vrtmrz/obsidian-livesync.git . && \
+    sed -i 's|prefix: this.context.vaultPath + nodePath.sep,|prefix: nodePath.join(this.context.vaultPath, ".livesync", "db") + nodePath.sep,|' src/apps/cli/services/NodeServiceHub.ts && \
     npm install && \
     cd src/apps/cli && \
     npm run build
