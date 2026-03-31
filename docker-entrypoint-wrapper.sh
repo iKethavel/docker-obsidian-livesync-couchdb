@@ -42,6 +42,9 @@ if [ -n "$HEADLESS_SYNC_DBS" ]; then
       echo "Configuring headless sync loop for database '$DB' mapping to '$VAULT_PATH'..."
       mkdir -p "$VAULT_PATH/.livesync/db"
       
+      # Precompute the encrypt boolean (must be before the heredoc)
+      if [ -n "$SYNC_PASSPHRASE" ]; then ENCRYPT_VAL="true"; else ENCRYPT_VAL="false"; fi
+
       # Always write settings.json fresh from current env vars
       echo "Writing settings.json for '$DB'..."
       cat <<EOF > "$VAULT_PATH/.livesync/settings.json"
@@ -50,7 +53,7 @@ if [ -n "$HEADLESS_SYNC_DBS" ]; then
     "couchDB_USER": "${COUCHDB_USER}",
     "couchDB_PASSWORD": "${COUCHDB_PASSWORD}",
     "couchDB_DBNAME": "${DB}",
-    "encrypt": ${SYNC_PASSPHRASE:+true}${SYNC_PASSPHRASE:-false},
+    "encrypt": ${ENCRYPT_VAL},
     "passphrase": "${SYNC_PASSPHRASE}",
     "usePathObfuscation": false,
     "usePluginSync": false,
