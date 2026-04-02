@@ -124,8 +124,6 @@ EOF
     fi
   ) &
 fi
-  ) &
-fi
 
 # Finally, execute the original couchdb entrypoint
 echo "Starting CouchDB..."

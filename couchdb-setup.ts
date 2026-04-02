@@ -24,7 +24,7 @@ const CONFIG_FILE = path.resolve("/opt/couchdb/etc/local.ini");
  * configure CouchDB at runtime. We parse these to extract the config
  * keys and values.
  */
-const SCRIPT_FILE = path.resolve("./couchdb-init.sh");
+const SCRIPT_FILE = path.resolve("/scripts/couchdb-init.sh");
 
 /**
  * Parses the given Bash script, looking for `curl` commands
