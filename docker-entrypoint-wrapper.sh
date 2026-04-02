@@ -12,7 +12,15 @@ if [ -n "$HEADLESS_SYNC_DBS" ]; then
 
   # Always use subdirectories named after the database
   IFS=',' read -ra DB_ARRAY <<< "$HEADLESS_SYNC_DBS"
-...
+  
+  # Start the sync coordinator in the background
+  (
+    echo "Waiting for CouchDB to accept connections..."
+    until curl -s "${SERVER_URL}/" > /dev/null; do
+      sleep 2
+    done
+    echo "CouchDB is up."
+
     for DB in "${DB_ARRAY[@]}"; do
       # Trim whitespace
       DB=$(echo "$DB" | xargs)
