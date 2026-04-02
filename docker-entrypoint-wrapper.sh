@@ -10,34 +10,15 @@ if [ -n "$HEADLESS_SYNC_DBS" ]; then
   SYNC_INTERVAL="${SYNC_INTERVAL:-30}"
   SERVER_URL="${SERVER_URL:-http://127.0.0.1:5984}"
 
-  if [[ "$HEADLESS_SYNC_DBS" == *","* ]]; then
-    # Multiple databases -> use subdirectories
-    IFS=',' read -ra DB_ARRAY <<< "$HEADLESS_SYNC_DBS"
-    USE_SUBDIRS=true
-  else
-    # Single database specified -> use root directory
-    DB_ARRAY=("$HEADLESS_SYNC_DBS")
-    USE_SUBDIRS=false
-  fi
-
-  # Start the sync coordinator in the background
-  (
-    echo "Waiting for CouchDB to accept connections..."
-    until curl -s "${SERVER_URL}/" > /dev/null; do
-      sleep 2
-    done
-    echo "CouchDB is up."
-
+  # Always use subdirectories named after the database
+  IFS=',' read -ra DB_ARRAY <<< "$HEADLESS_SYNC_DBS"
+...
     for DB in "${DB_ARRAY[@]}"; do
       # Trim whitespace
       DB=$(echo "$DB" | xargs)
       [ -z "$DB" ] && continue
 
-      if [ "$USE_SUBDIRS" = true ]; then
-        VAULT_PATH="/opt/headless/data/$DB"
-      else
-        VAULT_PATH="/opt/headless/data"
-      fi
+      VAULT_PATH="/opt/headless/data/$DB"
 
       echo "Configuring headless sync loop for database '$DB' mapping to '$VAULT_PATH'..."
       mkdir -p "$VAULT_PATH/.livesync/db"
