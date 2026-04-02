@@ -94,7 +94,18 @@ To enable this feature, provide the `HEADLESS_SYNC_DBS` environment variable and
       # - /path/to/your/vault:/opt/headless/data
       # If specifying multiple DBs (e.g. "personal,larp"), map the parent directory:
       - /path/to/multiple/vaults:/opt/headless/data
+      - /path/to/ssh/keys:/root/.ssh:ro # optional: if using SSH for Git
 ```
+
+### Git Synchronization (Source of Truth)
+
+This container implements a **"CouchDB as Source of Truth"** workflow for Git synchronization:
+1. **Mirroring**: CouchDB is mirrored to specific subdirectories (e.g., `obsidian_larp/`).
+2. **Conflict Resolution**: In the event of a merge conflict between the local mirror and the remote repository, the **local (CouchDB) version always wins** (`-X ours`).
+3. **External Files**: Files located at the root of the volume (like `quartz.config.ts`, `README.md`, or deployment scripts) are safely synchronized. If they are modified on the remote, they will be pulled into the volume. If they don't exist locally, they will be added.
+4. **Automation**: The container automatically fetches, merges, commits, and pushes changes every `SYNC_INTERVAL`.
+
+**Note:** Ensure your `GIT_REMOTE_URL` is configured with appropriate credentials (e.g., an HTTPS Personal Access Token or a mounted SSH key).
 
 Run the container with CouchDB configured for Obsidian LiveSync:
 
