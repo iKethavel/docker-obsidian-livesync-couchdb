@@ -107,17 +107,38 @@ EOF
 
     # Start a single Git synchronization loop for the entire volume
     if [ -n "$GIT_REMOTE_URL" ]; then
-      echo "Starting volume-wide Git synchronization loop..."
+      echo "Starting volume-wide Git synchronization loop (Source of Truth: CouchDB)..."
       (
         while true; do
           cd "$VOLUME_ROOT"
+          
+          # 1. Fetch latest changes from remote
+          git fetch origin "$GIT_BRANCH" > /dev/null 2>&1 || echo "[Git] Fetch failed, will retry..."
+
+          # 2. Add any MIRROR changes from CouchDB to the index
           git add .
+          
+          # 3. Commit local mirror changes
           if ! git diff --staged --quiet; then
-            echo "[Git] Changes detected across volume, committing..."
-            git commit -m "Obsidian LiveSync Volume Update: $(date)"
-            echo "[Git] Pushing all volume changes to origin/$GIT_BRANCH..."
-            git push origin "$GIT_BRANCH" || echo "[Git] Push failed for volume, will retry next cycle..."
+            echo "[Git] Mirror changes detected, committing..."
+            git commit -m "Obsidian LiveSync Mirror Update: $(date)" || echo "[Git] Commit failed"
           fi
+
+          # 4. Integrate remote changes (like Quartz config), but prioritize local (CouchDB) notes in case of conflict
+          if ! git merge -X ours "origin/$GIT_BRANCH" -m "chore: sync with remote changes" > /dev/null 2>&1; then
+             echo "[Git] Auto-merge encountered conflicts; resolved using local (CouchDB) versions."
+          fi
+
+          # 5. Push final state to remote
+          if ! git diff origin/"$GIT_BRANCH" --quiet; then
+             echo "[Git] Pushing volume updates to origin/$GIT_BRANCH..."
+             if git push origin "$GIT_BRANCH" 2>&1; then
+                echo "[Git] Push successful."
+             else
+                echo "[Git] Push failed; will retry in next cycle."
+             fi
+          fi
+
           sleep "$SYNC_INTERVAL"
         done
       ) &
