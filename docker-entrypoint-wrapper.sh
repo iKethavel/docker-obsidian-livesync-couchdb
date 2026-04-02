@@ -21,17 +21,57 @@ if [ -n "$HEADLESS_SYNC_DBS" ]; then
     done
     echo "CouchDB is up."
 
+    # Git initialization once for the entire volume if GIT_REMOTE_URL is provided
+    VOLUME_ROOT="/opt/headless/data"
+    if [ -n "$GIT_REMOTE_URL" ]; then
+      echo "Initializing volume-wide Git at '$VOLUME_ROOT'..."
+      GIT_BRANCH="${GIT_BRANCH:-main}"
+      GIT_USER_NAME="${GIT_USER_NAME:-Obsidian LiveSync Bot}"
+      GIT_USER_EMAIL="${GIT_USER_EMAIL:-obsidian-livesync@bot.local}"
+
+      # Ensure volume root is safe for Git
+      git config --global --add safe.directory "$VOLUME_ROOT"
+
+      cd "$VOLUME_ROOT"
+      if [ ! -d ".git" ]; then
+        echo "[Git] Initializing new repository at volume root..."
+        git init
+        git remote add origin "$GIT_REMOTE_URL"
+        
+        echo "[Git] Fetching remote branch '$GIT_BRANCH'..."
+        if git fetch origin "$GIT_BRANCH" 2>/dev/null; then
+          echo "[Git] Remote branch found, aligning local state..."
+          git checkout -B "$GIT_BRANCH" "origin/$GIT_BRANCH"
+          git reset --mixed "origin/$GIT_BRANCH"
+        else
+          echo "[Git] Remote branch not found or empty, starting fresh..."
+          git checkout -b "$GIT_BRANCH"
+        fi
+      fi
+      
+      # Ensure internal metadata is ignored across all vaults
+      if ! grep -q "\.livesync/" .gitignore 2>/dev/null; then
+        echo "**/.livesync/" >> .gitignore
+        git add .gitignore
+        git commit -m "chore: ignore livesync internals globally" || true
+      fi
+
+      git config user.name "$GIT_USER_NAME"
+      git config user.email "$GIT_USER_EMAIL"
+      echo "[Git] Volume-wide configuration complete."
+    fi
+
     for DB in "${DB_ARRAY[@]}"; do
       # Trim whitespace
       DB=$(echo "$DB" | xargs)
       [ -z "$DB" ] && continue
 
-      VAULT_PATH="/opt/headless/data/$DB"
+      VAULT_PATH="$VOLUME_ROOT/$DB"
 
       echo "Configuring headless sync loop for database '$DB' mapping to '$VAULT_PATH'..."
       mkdir -p "$VAULT_PATH/.livesync/db"
       
-      # Precompute the encrypt boolean (must be before the heredoc)
+      # Precompute the encrypt boolean
       if [ -n "$SYNC_PASSPHRASE" ]; then ENCRYPT_VAL="true"; else ENCRYPT_VAL="false"; fi
 
       # Always write settings.json fresh from current env vars
@@ -50,45 +90,6 @@ if [ -n "$HEADLESS_SYNC_DBS" ]; then
 }
 EOF
 
-      # Git initialization if GIT_REMOTE_URL is provided
-      if [ -n "$GIT_REMOTE_URL" ]; then
-        echo "Initializing Git for vault at '$VAULT_PATH'..."
-        GIT_BRANCH="${GIT_BRANCH:-main}"
-        GIT_USER_NAME="${GIT_USER_NAME:-Obsidian LiveSync Bot}"
-        GIT_USER_EMAIL="${GIT_USER_EMAIL:-obsidian-livesync@bot.local}"
-
-        # Ensure directory is safe for Git (handles permission issues in Docker volumes)
-        git config --global --add safe.directory "$VAULT_PATH"
-
-        cd "$VAULT_PATH"
-        if [ ! -d ".git" ]; then
-          echo "[Git] Initializing new repository in '$VAULT_PATH'..."
-          git init
-          git remote add origin "$GIT_REMOTE_URL"
-          
-          # Force a checkout of the remote branch if it exists
-          echo "[Git] Fetching remote branch '$GIT_BRANCH'..."
-          if git fetch origin "$GIT_BRANCH" 2>/dev/null; then
-            echo "[Git] Remote branch found, aligning local state..."
-            git checkout -B "$GIT_BRANCH" "origin/$GIT_BRANCH"
-            git reset --mixed "origin/$GIT_BRANCH"
-          else
-            echo "[Git] Remote branch not found or empty, starting fresh..."
-            git checkout -b "$GIT_BRANCH"
-          fi
-          
-          # Ensure .livesync is ignored
-          if ! grep -q ".livesync" .gitignore 2>/dev/null; then
-            echo ".livesync/" >> .gitignore
-            git add .gitignore
-            git commit -m "chore: add .gitignore for livesync internals" || true
-          fi
-        fi
-        git config user.name "$GIT_USER_NAME"
-        git config user.email "$GIT_USER_EMAIL"
-        echo "[Git] Configuration complete for '$DB'."
-      fi
-
       # Start infinite sync loop for this database
       (
         while true; do
@@ -99,22 +100,30 @@ EOF
           # Step 2: write local PouchDB cache to filesystem as actual files
           node dist/index.cjs "$VAULT_PATH" --settings "$VAULT_PATH/.livesync/settings.json" mirror || echo "Mirror for '$DB' encountered an error, will retry..."
           
-          # Step 3: Git sync if GIT_REMOTE_URL is provided
-          if [ -n "$GIT_REMOTE_URL" ]; then
-            cd "$VAULT_PATH"
-            git add .
-            if ! git diff --staged --quiet; then
-              echo "[Git] Changes detected for '$DB', committing..."
-              git commit -m "Obsidian LiveSync Mirror Update: $(date)"
-              echo "[Git] Pushing changes for '$DB' to origin/$GIT_BRANCH..."
-              git push origin "$GIT_BRANCH" || echo "[Git] Push failed for '$DB', will retry next cycle..."
-            fi
-          fi
-
           sleep "$SYNC_INTERVAL"
         done
       ) &
     done
+
+    # Start a single Git synchronization loop for the entire volume
+    if [ -n "$GIT_REMOTE_URL" ]; then
+      echo "Starting volume-wide Git synchronization loop..."
+      (
+        while true; do
+          cd "$VOLUME_ROOT"
+          git add .
+          if ! git diff --staged --quiet; then
+            echo "[Git] Changes detected across volume, committing..."
+            git commit -m "Obsidian LiveSync Volume Update: $(date)"
+            echo "[Git] Pushing all volume changes to origin/$GIT_BRANCH..."
+            git push origin "$GIT_BRANCH" || echo "[Git] Push failed for volume, will retry next cycle..."
+          fi
+          sleep "$SYNC_INTERVAL"
+        done
+      ) &
+    fi
+  ) &
+fi
   ) &
 fi
 
