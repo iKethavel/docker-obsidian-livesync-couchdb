@@ -62,23 +62,31 @@ EOF
 
         cd "$VAULT_PATH"
         if [ ! -d ".git" ]; then
+          echo "[Git] Initializing new repository in '$VAULT_PATH'..."
           git init
           git remote add origin "$GIT_REMOTE_URL"
+          
+          # Force a checkout of the remote branch if it exists
+          echo "[Git] Fetching remote branch '$GIT_BRANCH'..."
+          if git fetch origin "$GIT_BRANCH" 2>/dev/null; then
+            echo "[Git] Remote branch found, aligning local state..."
+            git checkout -B "$GIT_BRANCH" "origin/$GIT_BRANCH"
+            git reset --mixed "origin/$GIT_BRANCH"
+          else
+            echo "[Git] Remote branch not found or empty, starting fresh..."
+            git checkout -b "$GIT_BRANCH"
+          fi
+          
           # Ensure .livesync is ignored
           if ! grep -q ".livesync" .gitignore 2>/dev/null; then
             echo ".livesync/" >> .gitignore
-          fi
-          # Fetch and align with remote if it exists
-          git fetch origin "$GIT_BRANCH" 2>/dev/null || true
-          if git ls-remote --exit-code origin "$GIT_BRANCH" >/dev/null 2>&1; then
-            git checkout "$GIT_BRANCH" || git checkout -b "$GIT_BRANCH"
-            git reset --mixed "origin/$GIT_BRANCH"
-          else
-            git checkout -b "$GIT_BRANCH"
+            git add .gitignore
+            git commit -m "chore: add .gitignore for livesync internals" || true
           fi
         fi
         git config user.name "$GIT_USER_NAME"
         git config user.email "$GIT_USER_EMAIL"
+        echo "[Git] Configuration complete for '$DB'."
       fi
 
       # Start infinite sync loop for this database
